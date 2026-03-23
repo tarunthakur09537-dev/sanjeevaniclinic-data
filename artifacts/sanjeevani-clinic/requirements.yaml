@@ -1,0 +1,22 @@
+packages:
+  "date-fns": "For formatting and parsing dates consistently"
+  "react-hook-form": "For robust form state management"
+  "@hookform/resolvers": "For integrating Zod validation with forms"
+  "zod": "For strict schema validation of patient entries"
+  "framer-motion": "For smooth, premium animations on modals and page transitions"
+  "lucide-react": "For beautiful, consistent UI icons"
+  "clsx": "For conditional class name joining"
+  "tailwind-merge": "For merging tailwind classes safely"
+
+images:
+  - path: "artifacts/sanjeevani-clinic/public/images/medical-bg.png"
+    description: "Soft, abstract geometric background in light medical green and white, very subtle and professional, clean aesthetic"
+    aspect_ratio: "16:9"
+  - path: "artifacts/sanjeevani-clinic/public/images/auth-bg.png"
+    description: "Clean minimal clinic waiting room blur, very bright, mostly white and soft mint green"
+    aspect_ratio: "16:9"
+
+notes:
+  - Using generated hooks from @workspace/api-client-react
+  - Auth is handled via localStorage 'clinic_auth' flag
+  - Date inputs need format conversion between HTML (YYYY-MM-DD) and API (DD-MM-YYYY)

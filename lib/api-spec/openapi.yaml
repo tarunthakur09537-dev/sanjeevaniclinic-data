@@ -1,15 +1,16 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Sanjeevani Clinic API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: patients
+    description: Patient operations
 paths:
   /healthz:
     get:
@@ -24,6 +25,52 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /patients:
+    get:
+      operationId: getPatients
+      tags: [patients]
+      summary: Get patients
+      description: Get patients filtered by date
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Date in DD-MM-YYYY format
+      responses:
+        "200":
+          description: List of patients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Patient"
+    post:
+      operationId: createPatient
+      tags: [patients]
+      summary: Create patient
+      description: Add a new patient entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePatientInput"
+      responses:
+        "201":
+          description: Patient created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +80,72 @@ components:
           type: string
       required:
         - status
-
+    Patient:
+      type: object
+      properties:
+        id:
+          type: string
+        patient_id:
+          type: string
+        name:
+          type: string
+        phone:
+          type: string
+        disease:
+          type: string
+        age:
+          type: string
+          nullable: true
+        gender:
+          type: string
+          nullable: true
+        date:
+          type: string
+        time:
+          type: string
+      required:
+        - id
+        - patient_id
+        - name
+        - phone
+        - disease
+        - date
+        - time
+    CreatePatientInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        phone:
+          type: string
+          minLength: 10
+        disease:
+          type: string
+          minLength: 1
+        age:
+          type: string
+          nullable: true
+        gender:
+          type: string
+          nullable: true
+        date:
+          type: string
+        time:
+          type: string
+      required:
+        - name
+        - phone
+        - disease
+        - date
+        - time
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+        - message
