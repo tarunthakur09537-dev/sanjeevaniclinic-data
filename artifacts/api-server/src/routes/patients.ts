@@ -3,7 +3,16 @@ import { Router, type IRouter } from "express";
 const router: IRouter = Router();
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+
+// Sanitize: user may have pasted the full Airtable URL path instead of just the Base ID.
+function sanitizeBaseId(raw: string | undefined): string {
+  if (!raw) return "";
+  const firstSegment = raw.split(/[/?]/)[0];
+  if (firstSegment.startsWith("app")) return firstSegment;
+  return "app" + firstSegment;
+}
+
+const AIRTABLE_BASE_ID = sanitizeBaseId(process.env.AIRTABLE_BASE_ID);
 const AIRTABLE_TABLE_NAME = "Patients";
 const AIRTABLE_BASE_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_TABLE_NAME)}`;
 
@@ -12,6 +21,36 @@ function airtableHeaders() {
     Authorization: `Bearer ${AIRTABLE_API_KEY}`,
     "Content-Type": "application/json",
   };
+}
+
+// Convert DD-MM-YYYY → YYYY-MM-DD (for Airtable Date field)
+function toISODate(ddmmyyyy: string): string {
+  const parts = ddmmyyyy.split("-");
+  if (parts.length !== 3) return ddmmyyyy;
+  return `${parts[2]}-${parts[1]}-${parts[0]}`;
+}
+
+// Convert Airtable date (YYYY-MM-DDTxx or YYYY-MM-DD) → DD-MM-YYYY
+function toDDMMYYYY(isoDate: string | undefined): string {
+  if (!isoDate) return "";
+  const datePart = isoDate.split("T")[0];
+  const parts = datePart.split("-");
+  if (parts.length !== 3) return isoDate;
+  return `${parts[2]}-${parts[1]}-${parts[0]}`;
+}
+
+// Extract HH:MM from ISO timestamp (Airtable Created time field)
+function toHHMM(isoTimestamp: string | undefined): string {
+  if (!isoTimestamp) return "";
+  // Parse as UTC and format to IST (UTC+5:30) or just show UTC HH:MM
+  try {
+    const d = new Date(isoTimestamp);
+    const hh = String(d.getUTCHours()).padStart(2, "0");
+    const mm = String(d.getUTCMinutes()).padStart(2, "0");
+    return `${hh}:${mm}`;
+  } catch {
+    return "";
+  }
 }
 
 interface AirtableRecord {
@@ -37,39 +76,39 @@ function mapRecord(record: AirtableRecord) {
     disease: record.fields.disease ?? "",
     age: record.fields.age ?? null,
     gender: record.fields.gender ?? null,
-    date: record.fields.date ?? "",
-    time: record.fields.time ?? "",
+    date: toDDMMYYYY(record.fields.date),
+    // time is a Computed "Created time" field in Airtable — read-only, extract HH:MM from it
+    time: toHHMM(record.fields.time),
   };
 }
 
 router.get("/patients/debug", async (req, res) => {
-  const baseId = AIRTABLE_BASE_ID ?? "(missing)";
   const apiKeySet = !!AIRTABLE_API_KEY;
-  const testUrl = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(AIRTABLE_TABLE_NAME)}?maxRecords=1`;
-
   try {
-    const response = await fetch(testUrl, { headers: airtableHeaders() });
-    const body = await response.text();
+    const testRes = await fetch(AIRTABLE_BASE_URL + "?maxRecords=1", { headers: airtableHeaders() });
+    const testBody = await testRes.text();
     res.json({
-      baseId: baseId.substring(0, 8) + "...",
+      resolvedBaseId: AIRTABLE_BASE_ID,
       tableName: AIRTABLE_TABLE_NAME,
       apiKeySet,
-      airtableStatus: response.status,
-      airtableResponse: body,
-      urlCalled: testUrl.replace(baseId, baseId.substring(0, 5) + "..."),
+      testStatus: testRes.status,
+      testResponse: testBody.substring(0, 300),
     });
   } catch (err) {
-    res.json({ error: String(err), baseId: baseId.substring(0, 8) + "...", tableName: AIRTABLE_TABLE_NAME });
+    res.json({ error: String(err) });
   }
 });
 
 router.get("/patients", async (req, res) => {
   try {
-    const date = req.query.date as string | undefined;
+    const date = req.query.date as string | undefined; // DD-MM-YYYY
 
     let url = AIRTABLE_BASE_URL + "?pageSize=100";
     if (date) {
-      const filterFormula = `SEARCH("${date}",{date})`;
+      // Convert to ISO for Airtable Date field filter
+      const isoDate = toISODate(date);
+      // DATESTR() converts Airtable date to YYYY-MM-DD string for comparison
+      const filterFormula = `DATESTR({date})="${isoDate}"`;
       url += `&filterByFormula=${encodeURIComponent(filterFormula)}`;
     }
     url += "&sort[0][field]=patient_id&sort[0][direction]=asc";
@@ -99,7 +138,7 @@ router.post("/patients", async (req, res) => {
       disease?: string;
       age?: string;
       gender?: string;
-      date?: string;
+      date?: string; // DD-MM-YYYY from frontend
       time?: string;
     };
 
@@ -116,9 +155,13 @@ router.post("/patients", async (req, res) => {
       return;
     }
 
+    // Convert date to ISO for Airtable Date field
+    const isoDate = date ? toISODate(date) : new Date().toISOString().split("T")[0];
+
+    // Count existing patients for this date to generate sequential patient_id
     const countUrl =
       AIRTABLE_BASE_URL +
-      `?fields[]=patient_id&filterByFormula=${encodeURIComponent(`SEARCH("${date}",{date})`)}&pageSize=100`;
+      `?fields[]=patient_id&filterByFormula=${encodeURIComponent(`DATESTR({date})="${isoDate}"`)}&pageSize=100`;
 
     const countRes = await fetch(countUrl, { headers: airtableHeaders() });
     if (!countRes.ok) {
@@ -136,8 +179,8 @@ router.post("/patients", async (req, res) => {
       name: name.trim(),
       phone: phone.trim(),
       disease: disease.trim(),
-      date,
-      time,
+      date: isoDate,   // Airtable Date field — YYYY-MM-DD
+      // Note: "time" is a Computed/Created-time field in Airtable — do NOT write to it
     };
     if (age && age.trim()) fields.age = age.trim();
     if (gender && gender.trim()) fields.gender = gender.trim();
