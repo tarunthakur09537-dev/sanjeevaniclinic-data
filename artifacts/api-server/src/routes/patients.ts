@@ -42,6 +42,27 @@ function mapRecord(record: AirtableRecord) {
   };
 }
 
+router.get("/patients/debug", async (req, res) => {
+  const baseId = AIRTABLE_BASE_ID ?? "(missing)";
+  const apiKeySet = !!AIRTABLE_API_KEY;
+  const testUrl = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(AIRTABLE_TABLE_NAME)}?maxRecords=1`;
+
+  try {
+    const response = await fetch(testUrl, { headers: airtableHeaders() });
+    const body = await response.text();
+    res.json({
+      baseId: baseId.substring(0, 8) + "...",
+      tableName: AIRTABLE_TABLE_NAME,
+      apiKeySet,
+      airtableStatus: response.status,
+      airtableResponse: body,
+      urlCalled: testUrl.replace(baseId, baseId.substring(0, 5) + "..."),
+    });
+  } catch (err) {
+    res.json({ error: String(err), baseId: baseId.substring(0, 8) + "...", tableName: AIRTABLE_TABLE_NAME });
+  }
+});
+
 router.get("/patients", async (req, res) => {
   try {
     const date = req.query.date as string | undefined;
