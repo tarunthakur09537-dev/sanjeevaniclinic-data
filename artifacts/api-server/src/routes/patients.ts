@@ -1,5 +1,4 @@
 import { Router, type IRouter } from "express";
-import { z } from "zod/v4";
 
 const router: IRouter = Router();
 
@@ -14,16 +13,6 @@ function airtableHeaders() {
     "Content-Type": "application/json",
   };
 }
-
-const CreatePatientSchema = z.object({
-  name: z.string().min(1, "Name required"),
-  phone: z.string().min(10, "Phone number must be at least 10 digits"),
-  disease: z.string().min(1, "Disease required"),
-  age: z.string().optional().nullable(),
-  gender: z.string().optional().nullable(),
-  date: z.string(),
-  time: z.string(),
-});
 
 interface AirtableRecord {
   id: string;
@@ -66,14 +55,14 @@ router.get("/patients", async (req, res) => {
 
     const response = await fetch(url, { headers: airtableHeaders() });
     if (!response.ok) {
-      const err = await response.text();
-      req.log.error({ err }, "Airtable fetch error");
+      const errText = await response.text();
+      req.log.error({ errText, status: response.status }, "Airtable fetch error");
       res.status(502).json({ error: "airtable_error", message: "Failed to fetch from Airtable" });
       return;
     }
 
     const data = (await response.json()) as { records: AirtableRecord[] };
-    const patients = data.records.map(mapRecord);
+    const patients = (data.records || []).map(mapRecord);
     res.json(patients);
   } catch (err) {
     req.log.error({ err }, "Error fetching patients");
@@ -83,13 +72,28 @@ router.get("/patients", async (req, res) => {
 
 router.post("/patients", async (req, res) => {
   try {
-    const parsed = CreatePatientSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: "validation_error", message: parsed.error.message });
+    const { name, phone, disease, age, gender, date, time } = req.body as {
+      name?: string;
+      phone?: string;
+      disease?: string;
+      age?: string;
+      gender?: string;
+      date?: string;
+      time?: string;
+    };
+
+    if (!name || name.trim().length === 0) {
+      res.status(400).json({ error: "validation_error", message: "Name required" });
       return;
     }
-
-    const { name, phone, disease, age, gender, date, time } = parsed.data;
+    if (!phone || phone.trim().length < 10) {
+      res.status(400).json({ error: "validation_error", message: "Phone number must be at least 10 digits" });
+      return;
+    }
+    if (!disease || disease.trim().length === 0) {
+      res.status(400).json({ error: "validation_error", message: "Disease required" });
+      return;
+    }
 
     const countUrl =
       AIRTABLE_BASE_URL +
@@ -97,25 +101,25 @@ router.post("/patients", async (req, res) => {
 
     const countRes = await fetch(countUrl, { headers: airtableHeaders() });
     if (!countRes.ok) {
-      const err = await countRes.text();
-      req.log.error({ err }, "Airtable count error");
+      const errText = await countRes.text();
+      req.log.error({ errText, status: countRes.status }, "Airtable count error");
       res.status(502).json({ error: "airtable_error", message: "Failed to count patients" });
       return;
     }
 
     const countData = (await countRes.json()) as { records: AirtableRecord[] };
-    const nextId = String(countData.records.length + 1).padStart(3, "0");
+    const nextId = String((countData.records || []).length + 1).padStart(3, "0");
 
     const fields: Record<string, string | null | undefined> = {
       patient_id: nextId,
-      name,
-      phone,
-      disease,
+      name: name.trim(),
+      phone: phone.trim(),
+      disease: disease.trim(),
       date,
       time,
     };
-    if (age) fields.age = age;
-    if (gender) fields.gender = gender;
+    if (age && age.trim()) fields.age = age.trim();
+    if (gender && gender.trim()) fields.gender = gender.trim();
 
     const createRes = await fetch(AIRTABLE_BASE_URL, {
       method: "POST",
@@ -124,8 +128,8 @@ router.post("/patients", async (req, res) => {
     });
 
     if (!createRes.ok) {
-      const err = await createRes.text();
-      req.log.error({ err }, "Airtable create error");
+      const errText = await createRes.text();
+      req.log.error({ errText, status: createRes.status }, "Airtable create error");
       res.status(502).json({ error: "airtable_error", message: "Failed to create patient in Airtable" });
       return;
     }
