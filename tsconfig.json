@@ -11,6 +11,18 @@
     },
     {
       "path": "./lib/api-zod"
+    },
+    {
+      "path": "./apps/api-server"
+    },
+    {
+      "path": "./apps/sanjeevani-clinic"
+    },
+    {
+      "path": "./apps/mockup-sandbox"
+    },
+    {
+      "path": "./scripts"
     }
   ]
 }
