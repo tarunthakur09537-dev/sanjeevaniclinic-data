@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "framework": "vite",
   "buildCommand": "pnpm build",
   "outputDirectory": "apps/sanjeevani-clinic/dist",
   "rewrites": [
@@ -9,8 +8,8 @@
       "destination": "/api/index"
     },
     {
-      "source": "/(.*)",
-      "destination": "/$1"
+      "source": "/((?!.*\\.).*)",
+      "destination": "/index.html"
     }
   ]
 }
