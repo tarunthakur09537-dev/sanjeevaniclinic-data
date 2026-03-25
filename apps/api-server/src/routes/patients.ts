@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request, type Response } from "express";
 import { config as loadEnv } from "dotenv";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -214,7 +214,7 @@ async function createLocalPatient(input: {
   return created;
 }
 
-router.get("/patients/debug", async (_req, res) => {
+router.get("/patients/debug", async (_req: Request, res: Response) => {
   const apiKeySet = !!AIRTABLE_API_KEY;
 
   if (!isAirtableConfigured) {
@@ -249,7 +249,7 @@ router.get("/patients/debug", async (_req, res) => {
   }
 });
 
-router.get("/patients", async (req, res) => {
+router.get("/patients", async (req: Request, res: Response) => {
   try {
     const date = req.query.date as string | undefined;
 
@@ -307,7 +307,7 @@ router.get("/patients", async (req, res) => {
   }
 });
 
-router.post("/patients", async (req, res) => {
+router.post("/patients", async (req: Request, res: Response) => {
   try {
     const { name, phone, disease, age, gender, date, time } = req.body as {
       name?: string;
