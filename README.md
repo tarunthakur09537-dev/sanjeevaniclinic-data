@@ -10,6 +10,8 @@ Create a local `.env` file from `.env.example` and set:
 
 - `AIRTABLE_API_KEY`
 - `AIRTABLE_BASE_ID`
+- `AIRTABLE_TABLE_ID`
+- `AIRTABLE_VIEW_ID`
 
 `AIRTABLE_BASE_ID` should look like `appXXXXXXXXXXXXXX`.
 
@@ -52,11 +54,15 @@ pnpm dev:api
 1. Push the repo to GitHub.
 2. Import the repository into Vercel.
 3. Keep the project root at the repository root.
-4. Add `AIRTABLE_API_KEY` and `AIRTABLE_BASE_ID` in Vercel Project Settings.
+4. Add these environment variables in Vercel Project Settings:
+   - `AIRTABLE_API_KEY`
+   - `AIRTABLE_BASE_ID`
+   - `AIRTABLE_TABLE_ID`
+   - `AIRTABLE_VIEW_ID`
 5. Deploy. `vercel.json` already configures:
    - `pnpm install --frozen-lockfile`
-   - `pnpm --filter @workspace/sanjeevani-clinic run build`
-   - `apps/sanjeevani-clinic/dist` as the static output directory
+   - `node scripts/vercel-build.mjs`
+   - `dist` as the static output directory
    - `/api/*` rewrites to `api/index.ts`
 
 ## Post-deploy checks
