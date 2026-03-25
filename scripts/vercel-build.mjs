@@ -13,7 +13,7 @@ async function mirrorOutput(sourceDir, outputDir) {
 }
 
 async function main() {
-  execSync("corepack pnpm --filter @workspace/sanjeevani-clinic run build", {
+  execSync("pnpm --filter @workspace/sanjeevani-clinic run build", {
     stdio: "inherit",
     cwd: repoRoot,
   });

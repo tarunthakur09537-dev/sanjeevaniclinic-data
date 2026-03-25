@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "outputDirectory": "apps/sanjeevani-clinic/dist",
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "node scripts/vercel-build.mjs",
   "functions": {
@@ -15,7 +16,7 @@
     },
     {
       "source": "/(.*)",
-      "destination": "/index"
+      "destination": "/index.html"
     }
   ]
 }
