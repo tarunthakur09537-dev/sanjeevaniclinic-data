@@ -4,11 +4,6 @@
   "buildCommand": "node scripts/vercel-build.mjs",
   "functions": {
     "api/**/*.ts": {
-      "runtime": "nodejs22.x",
-      "maxDuration": 10
-    },
-    "index.js": {
-      "runtime": "nodejs22.x",
       "maxDuration": 10
     }
   },
@@ -19,7 +14,7 @@
     },
     {
       "source": "/(.*)",
-      "destination": "/index"
+      "destination": "/index.html"
     }
   ]
 }

@@ -19,11 +19,11 @@ async function main() {
   });
 
   const sourceDir = path.join(repoRoot, "apps", "sanjeevani-clinic", "dist");
-  const nestedOutputDir = path.join(repoRoot, "apps", "api-server", "dist");
+  const nestedOutputDir = path.join(repoRoot, "public");
 
   await mirrorOutput(sourceDir, nestedOutputDir);
 
-  console.log(`Frontend assets mirrored at: ${nestedOutputDir}`);
+  console.log(`Frontend assets mirrored to root /public folder for Vercel static hosting: ${nestedOutputDir}`);
 }
 
 main().catch((error) => {
