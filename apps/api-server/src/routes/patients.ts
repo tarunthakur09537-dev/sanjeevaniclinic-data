@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
 loadEnv({ path: path.resolve(moduleDir, "../../../../.env") });
 
-const router: Router = Router();
+const router: any = Router();
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 
