@@ -6,7 +6,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-loadEnv({ path: path.resolve(moduleDir, "../../../../.env") });
+if (process.env.NODE_ENV !== "production") {
+  loadEnv({ path: path.resolve(moduleDir, "../../../../.env") });
+}
 
 const router: any = Router();
 
@@ -282,7 +284,7 @@ router.get("/patients", async (req: Request, res: Response) => {
     const response = await fetch(url, { headers: airtableHeaders() });
     if (!response.ok) {
       const errText = await response.text();
-      req.log.error({ errText, status: response.status }, "Airtable fetch error");
+      console.error({ errText, status: response.status }, "Airtable fetch error");
       if (fallbackOnAirtableError) {
         const patients = await listLocalPatients(date);
         res.setHeader("x-data-source", "local-fallback");
@@ -296,7 +298,7 @@ router.get("/patients", async (req: Request, res: Response) => {
     const data = (await response.json()) as { records: AirtableRecord[] };
     res.json((data.records || []).map(mapRecord));
   } catch (err) {
-    req.log.error({ err }, "Error fetching patients");
+    console.error({ err }, "Error fetching patients");
     if (fallbackOnAirtableError) {
       const date = req.query.date as string | undefined;
       const patients = await listLocalPatients(date);
@@ -357,7 +359,7 @@ router.post("/patients", async (req: Request, res: Response) => {
     const countRes = await fetch(countUrl, { headers: airtableHeaders() });
     if (!countRes.ok) {
       const errText = await countRes.text();
-      req.log.error({ errText, status: countRes.status }, "Airtable count error");
+      console.error({ errText, status: countRes.status }, "Airtable count error");
       if (fallbackOnAirtableError) {
         const created = await createLocalPatient({ name, phone, disease, age, gender, date, time });
         res.setHeader("x-data-source", "local-fallback");
@@ -389,7 +391,7 @@ router.post("/patients", async (req: Request, res: Response) => {
 
     if (!createRes.ok) {
       const errText = await createRes.text();
-      req.log.error({ errText, status: createRes.status }, "Airtable create error");
+      console.error({ errText, status: createRes.status }, "Airtable create error");
       if (fallbackOnAirtableError) {
         const created = await createLocalPatient({ name, phone, disease, age, gender, date, time });
         res.setHeader("x-data-source", "local-fallback");
@@ -403,7 +405,7 @@ router.post("/patients", async (req: Request, res: Response) => {
     const created = (await createRes.json()) as AirtableRecord;
     res.status(201).json(mapRecord(created));
   } catch (err) {
-    req.log.error({ err }, "Error creating patient");
+    console.error({ err }, "Error creating patient");
     if (fallbackOnAirtableError) {
       const { name, phone, disease, age, gender, date, time } = req.body as {
         name?: string;
