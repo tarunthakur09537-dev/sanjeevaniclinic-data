@@ -2,7 +2,6 @@
   "version": 2,
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "node scripts/vercel-build.mjs",
-  "outputDirectory": "dist",
   "functions": {
     "api/**/*.ts": {
       "runtime": "nodejs22.x",
@@ -13,6 +12,10 @@
     {
       "source": "/api/(.*)",
       "destination": "/api/index"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index"
     }
   ]
 }
