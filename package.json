@@ -3,9 +3,12 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "build": "pnpm -r --if-present run build",
-    "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./apps/**\" --filter \"./scripts\" --if-present run typecheck"
+    "dev": "corepack pnpm --parallel --stream --filter @workspace/api-server --filter @workspace/sanjeevani-clinic run dev",
+    "dev:api": "corepack pnpm --filter @workspace/api-server run dev",
+    "dev:web": "corepack pnpm --filter @workspace/sanjeevani-clinic run dev",
+    "build": "corepack pnpm --filter @workspace/sanjeevani-clinic run build",
+    "typecheck:libs": "tsc --build ./lib/db ./lib/api-client-react ./lib/api-zod ./apps/api-server ./apps/sanjeevani-clinic",
+    "typecheck": "corepack pnpm run typecheck:libs"
   },
   "private": true,
   "devDependencies": {

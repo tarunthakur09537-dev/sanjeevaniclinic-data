@@ -11,7 +11,7 @@ import { checkAuth, setAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AddPatientModal } from "@/components/AddPatientModal";
-import { useGetPatients } from "@workspace/api-client-react";
+import { getGetPatientsQueryKey, useGetPatients } from "@workspace/api-client-react";
 import logoImg from "@assets/f95PPS2Ez4GahpGBgoyqp57A97Ul9Qywyu0lPLqY_1774239437926.png";
 
 export default function Dashboard() {
@@ -41,7 +41,19 @@ export default function Dashboard() {
   }, [selectedHtmlDate]);
 
   // Fetch Data
-  const { data: patients, isLoading, isError } = useGetPatients({ date: apiDateString });
+  const { data: patients, isLoading, isError, error } = useGetPatients(
+    { date: apiDateString },
+    {
+      query: {
+        queryKey: getGetPatientsQueryKey({ date: apiDateString }),
+        refetchInterval: 1500,
+        refetchIntervalInBackground: true,
+      },
+    },
+  );
+  const errorMessage = error instanceof Error
+    ? error.message
+    : "Check your API connection or try again.";
 
   // Client-side filtering
   const filteredPatients = useMemo(() => {
@@ -225,7 +237,7 @@ export default function Dashboard() {
                       <div className="flex flex-col items-center justify-center">
                         <AlertCircle className="h-10 w-10 mb-4 opacity-50" />
                         <p className="font-semibold">Failed to load patient data.</p>
-                        <p className="text-sm opacity-80 mt-1">Check your API connection or try again.</p>
+                        <p className="text-sm opacity-80 mt-1">{errorMessage}</p>
                       </div>
                     </td>
                   </tr>

@@ -13,6 +13,7 @@ import { Select } from "./ui/select";
 import { useCreatePatient } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetPatientsQueryKey } from "@workspace/api-client-react";
+import type { Patient } from "@workspace/api-client-react";
 
 const patientSchema = z.object({
   name: z.string().min(1, "Name required").max(100),
@@ -52,15 +53,21 @@ export function AddPatientModal({ isOpen, onClose, currentDate }: AddPatientModa
 
   const { mutate, isPending } = useCreatePatient({
     mutation: {
-      onSuccess: () => {
-        // Invalidate the current date's query to refetch
-        queryClient.invalidateQueries({ queryKey: getGetPatientsQueryKey({ date: currentDate }) });
+      onSuccess: async (createdPatient) => {
+        const queryKey = getGetPatientsQueryKey({ date: currentDate });
+        queryClient.setQueryData<Patient[]>(queryKey, (current = []) => {
+          const withoutDuplicate = current.filter((patient) => patient.id !== createdPatient.id);
+          return [...withoutDuplicate, createdPatient].sort((a, b) =>
+            a.patient_id.localeCompare(b.patient_id, undefined, { numeric: true }),
+          );
+        });
+        await queryClient.invalidateQueries({ queryKey });
         reset();
         onClose();
       },
       onError: (err) => {
         console.error("Failed to create patient:", err);
-        alert("Failed to save patient entry. Please try again.");
+        alert(err instanceof Error ? err.message : "Failed to save patient entry. Please try again.");
       }
     }
   });

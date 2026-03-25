@@ -1,6 +1,6 @@
 import express, { type Express, Request, Response } from "express";
 import cors from "cors";
-const pinoHttp = require("pino-http");
+import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
@@ -29,6 +29,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Preserve `/api/*` paths for both local Vite proxying and Vercel rewrites.
 app.use("/api", router);
 
 export default app;

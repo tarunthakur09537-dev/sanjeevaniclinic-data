@@ -1,7 +1,14 @@
 {
   "version": 2,
-  "buildCommand": "pnpm build",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm --filter @workspace/sanjeevani-clinic run build",
   "outputDirectory": "apps/sanjeevani-clinic/dist",
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "nodejs22.x",
+      "maxDuration": 10
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
