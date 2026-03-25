@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router } from "express";
 import { config as loadEnv } from "dotenv";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
 loadEnv({ path: path.resolve(moduleDir, "../../../../.env") });
 
-const router: IRouter = Router();
+const router: Router = Router();
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 
